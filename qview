@@ -1,0 +1,45 @@
+#
+# Script to print off a node overview, include IP / Hostname, heap, load
+#
+
+_node_dir=`find . -name nodes -type d`
+
+printf "Datacenter: Cassandra\n"
+printf "=====================\n"
+printf "Address    Hostname                              Uptime (sec)   Max Heap(mb)    Used Heap(mb)   Off Heap(mb)    CPU %%idle\n"
+
+for _node in `ls $_node_dir`
+do
+  _host=`grep ${_node} -HA30 . -R --include node_info.json | grep hostname | awk '{print $NF}' | sed 's/"//g' | sed 's/,//g'` 
+  _uptime=`grep ^Uptime ${_node_dir}/${_node}/nodetool/info | awk '{print $NF}'`
+  _mheap=`grep '^Heap Memory' ${_node_dir}/${_node}/nodetool/info | awk '{print $NF}'`
+  _uheap=`grep '^Heap Memory' ${_node_dir}/${_node}/nodetool/info | awk '{print $5}'`
+  _oheap=`grep '^Off Heap' ${_node_dir}/${_node}/nodetool/info | awk '{print $NF}'`
+  _idle=`grep idle ${_node_dir}/${_node}/os-metrics/cpu.json | awk '{print substr($NF,1,5)}'`
+
+  printf "%s  %s\t %s \t%s \t%s \t%s \t\t%s%%\n" $_node $_host $_uptime $_mheap $_uheap $_oheap $_idle
+done
+
+
+exit 0
+
+for i in $(find . -name cfstats -print)
+do
+  cat $i | egrep 'Keyspace:|Table:|Maximum tombstones' 
+done > tstones.tmp
+
+cat tstones.tmp |
+while read c1 c2 c3 c4 c5 c6 c7 c8
+do
+  case $c1 in
+  
+  Keyspace:) _ksp=$c2
+  ;;
+  Table:) _tbl=$c2
+  ;;
+  Maximum) printf "KS: %s Table: %s Max tstones: %s\n" "$_ksp" "$_tbl" "$c8"
+  ;;
+  esac
+done | sort -rnk 7 | head
+ 
+rm tstones.tmp

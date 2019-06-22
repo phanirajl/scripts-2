@@ -1,0 +1,4 @@
+$ cat */nodetool/cfstats | awk '/Keyspace : electronic_parts$/{f=1}{if (f) print}/(----------------)/{f=0}' | \
+>   egrep 'Keyspace|Table:|Space used \(total\):' > table_space_used
+$ grep 'Space used' table_space_used | awk '{sum += $NF} END {print sum}'
+2944344712321

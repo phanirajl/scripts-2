@@ -1,0 +1,10 @@
+for i in $(ls *iostat*txt); do 
+   events=$(egrep -A 1 "%iowait" ${i} | awk '( $4 > 1.5 ) {print $4}') 
+   if [ "${events}" ]; then
+      echo ${i}
+      for j in ${events}; do
+          awk 'c-->0;$4~s{if(b)for(c=b+1;c>1;c--)print r[(NR-c+1)%b];print;c=a}b{r[NR%b]=$0}' b=2 a=0 s="${j}" ${i}
+      done 
+      echo "======"
+   fi
+done

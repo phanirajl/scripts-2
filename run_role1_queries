@@ -1,0 +1,6 @@
+cqlsh -u role1 -p pw1 -e "TRACING ON; SELECT * FROM hello_world.projects_by_account WHERE account='account1'; TRACING OFF;" | tail -4 | head -1
+cqlsh -u role1 -p pw1 -e "TRACING ON; SELECT * FROM hello_world.projects_by_account WHERE account='account1'; TRACING OFF;" | tail -4 | head -1
+cqlsh -u role1 -p pw1 -e "TRACING ON; SELECT * FROM hello_world.projects_by_account WHERE account='account1'; TRACING OFF;" | tail -4 | head -1
+cqlsh -u role1 -p pw1 -e "TRACING ON; SELECT * FROM hello_world.projects_by_account WHERE account='account1'; TRACING OFF;" | tail -4 | head -1
+cqlsh -u role1 -p pw1 -e "TRACING ON; SELECT * FROM hello_world.projects_by_account WHERE account='account1'; TRACING OFF;" | tail -4 | head -1
+cqlsh -u role1 -p pw1 -e "TRACING ON; SELECT * FROM hello_world.projects_by_account WHERE account='account1'; TRACING OFF;" | tail -4 | head -1

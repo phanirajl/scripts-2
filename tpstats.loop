@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+while true
+do
+   printf "\n$(date '+%F_%T')\n" >> /tmp/`hostname`-tpstats.out
+   nodetool tpstats >> /tmp/`hostname`-tpstats.out
+
+   printf "\n$(date '+%F_%T')\n" >> /tmp/`hostname`-netstats.out
+   nodetool netstats >> /tmp/`hostname`-netstats.out
+
+   printf "\n$(date '+%F_%T')\n" >> /tmp/`hostname`-iostat.out
+   iostat -x -c -d >> /tmp/`hostname`-iostat.out
+
+   printf "\n$(date '+%F_%T')\n" >> /tmp/`hostname`-vmstat.out
+   vmstat -a -t -w >> /tmp/`hostname`-vmstat.out
+   sleep 5
+done

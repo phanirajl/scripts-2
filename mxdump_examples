@@ -1,0 +1,2 @@
+nodetool sjk mxdump -q "org.apache.cassandra.metrics:type=NativeMemory,name=*"
+nodetool sjk mxdump -q "org.apache.cassandra.metrics:type=BufferPool,name=*"

@@ -1,0 +1,24 @@
+#
+# Script to find large partitions from diag tarball / collection of cfstats
+#
+
+for i in $(find . -name cfstats -print)
+do
+  cat $i | egrep 'Keyspace:|Table:|Maximum tombstones' 
+done > tstones.tmp
+
+cat tstones.tmp |
+while read c1 c2 c3 c4 c5 c6 c7 c8
+do
+  case $c1 in
+  
+  Keyspace:) _ksp=$c2
+  ;;
+  Table:) _tbl=$c2
+  ;;
+  Maximum) printf "KS: %s Table: %s Max tstones: %s\n" "$_ksp" "$_tbl" "$c8"
+  ;;
+  esac
+done | sort -rnk 7 | head
+ 
+rm tstones.tmp

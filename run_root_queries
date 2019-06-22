@@ -1,0 +1,6 @@
+cqlsh -u cassandra -p cassandra -e "TRACING ON; SELECT * FROM hello_world.projects_by_account WHERE account='account1'; TRACING OFF;" | tail -4 | head -1
+cqlsh -u cassandra -p cassandra -e "TRACING ON; SELECT * FROM hello_world.projects_by_account WHERE account='account1'; TRACING OFF;" | tail -4 | head -1
+cqlsh -u cassandra -p cassandra -e "TRACING ON; SELECT * FROM hello_world.projects_by_account WHERE account='account1'; TRACING OFF;" | tail -4 | head -1
+cqlsh -u cassandra -p cassandra -e "TRACING ON; SELECT * FROM hello_world.projects_by_account WHERE account='account1'; TRACING OFF;" | tail -4 | head -1
+cqlsh -u cassandra -p cassandra -e "TRACING ON; SELECT * FROM hello_world.projects_by_account WHERE account='account1'; TRACING OFF;" | tail -4 | head -1
+cqlsh -u cassandra -p cassandra -e "TRACING ON; SELECT * FROM hello_world.projects_by_account WHERE account='account1'; TRACING OFF;" | tail -4 | head -1

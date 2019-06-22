@@ -1,0 +1,13 @@
+#!/bin/bash
+# A script to try and extract and sort StatusLogger entries
+# into events, to make the results more readable
+#
+# expects the system.log to be in the cwd
+# if using against DSE 6.0, you need to extract column 7
+
+for i in `grep StatusLogger.java system.log | \
+  awk '{print $8}' | sort | uniq`
+do 
+  echo "==== $i ====" 
+  grep " $i " system.log | grep StatusLogger.java  
+done 

@@ -1,0 +1,29 @@
+#!/bin/sh
+# Steve's ticket: https://datastax.jira.com/browse/DB-2865
+
+if [ $# -ne 2 ]; then
+    echo "Usage: $0 interval count"
+    exit 1
+fi
+
+# Due to multiple PIDs being returned you will need to hard-code the PID here.  It will also need
+# to be changed for each node as the PIDs will differ.
+#
+PID=2851   
+INTERVAL=$1
+COUNT=$2
+
+echo "Collecting data every $INTERVAL seconds for $COUNT iterations..."
+for i in $(seq $COUNT); do
+    free -h > /tmp/$(hostname)-$(date '+%Y-%m-%d-%H:%M:%S')-free.out
+    cat /proc/meminfo > /tmp/$(hostname)-$(date '+%Y-%m-%d-%H:%M:%S')-meminfo.out
+    vmstat -s > /tmp/$(hostname)-$(date '+%Y-%m-%d-%H:%M:%S')-vmstats.out
+    nodetool info > /tmp/$(hostname)-$(date '+%Y-%m-%d-%H:%M:%S')-info.out
+    nodetool status > /tmp/$(hostname)-$(date '+%Y-%m-%d-%H:%M:%S')-status.out
+    sudo -u cassandra pmap -x $PID > /tmp/$(hostname)-$(date '+%Y-%m-%d-%H:%M:%S')-pmap.out
+    sudo -u cassandra cat /proc/$PID/status > /tmp/$(hostname)-$(date '+%Y-%m-%d-%H:%M:%S')-procs.out
+    sudo -u cassandra cat /proc/$PID/smaps > /tmp/$(hostname)-$(date '+%Y-%m-%d-%H:%M:%S')-smaps.out
+    sudo -u cassandra jmap -F -heap $PID 2>&1 > /tmp/$(hostname)-$DATEFMT-jmap.out
+    echo "Sleeping for $INTERVAL..."
+sleep $INTERVAL
+done

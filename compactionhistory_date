@@ -1,0 +1,2 @@
+# get the date from compactions
+$ cat *ompaction*.txt | while read c1 c2 c3 c4 c5 c6; do   _date=`echo $c4 | cut -c-1-10`;   _time=`date -r $_date`;   printf "$c3 \t\t\t$_time \n"; done | grep rollup_state

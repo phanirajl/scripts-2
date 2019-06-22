@@ -1,0 +1,24 @@
+#
+# Script to find large partitions from diag tarball / collection of cfstats
+#
+
+for i in $(find . -name cfstats -print)
+do
+  cat $i | egrep 'Keyspace|Table:|Compacted partition maximum bytes:' 
+done > lparts.tmp
+
+cat lparts.tmp |
+while read c1 c2 c3 c4 c5 c6
+do
+  case $c1 in
+  
+  Keyspace) _ksp=$c3
+  ;;
+  Table:) _tbl=$c2
+  ;;
+  Compacted) printf "KS: %s Table: %s Max Part (bytes): %s\n" "$_ksp" "$_tbl" "$c5"
+  ;;
+  esac
+done | sort -rnk 8 | head
+ 
+rm lparts.tmp

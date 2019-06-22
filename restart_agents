@@ -1,0 +1,5 @@
+
+for i in `nodetool status | grep rack1 | awk '{print $2}'`
+do
+ssh $i "sudo service datastax-agent restart"
+done

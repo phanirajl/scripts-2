@@ -1,0 +1,74 @@
+# Ticket 43029
+# https://docs.datastax.com/en/dse/6.0/dse-admin/datastax_enterprise/security/secRlac.html
+
+# Edit cassandra.yaml
+
+ authenticator: com.datastax.bdp.cassandra.auth.DseAuthenticator
+ authorizer: com.datastax.bdp.cassandra.auth.DseAuthorizer
+ role_manager: com.datastax.bdp.cassandra.auth.DseRoleManager
+
+# Edit dse.yaml 
+
+ authentication_options:
+     enabled: true
+     default_scheme: internal
+#     allow_digest_with_kerberos: true
+#     plain_text_without_ssl: warn
+#     transitional_mode: disabled
+#     other_schemes:
+#     scheme_permissions: false 
+
+ role_management_options:
+     mode: internal
+
+ authorization_options:
+      enabled: true
+      transitional_mode: normal
+      allow_row_level_security: true
+
+# create keyspace, roles, etc
+cqlsh -u cassandra -p cassandra << EOF
+DROP KEYSPACE IF EXISTS hello_world;
+DROP ROLE IF EXISTS role1;
+DROP ROLE IF EXISTS role2;
+CREATE KEYSPACE hello_world WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '1'};
+
+CREATE TABLE hello_world.projects_by_account (
+  account text,
+  project text,
+  info text,
+  PRIMARY KEY ((account), project)
+);
+RESTRICT ROWS ON hello_world.projects_by_account USING account;
+
+INSERT INTO hello_world.projects_by_account (account, project) VALUES ('account1', 'project11');
+INSERT INTO hello_world.projects_by_account (account, project) VALUES ('account1', 'project12');
+INSERT INTO hello_world.projects_by_account (account, project) VALUES ('account1', 'project13');
+INSERT INTO hello_world.projects_by_account (account, project) VALUES ('account1', 'project14');
+INSERT INTO hello_world.projects_by_account (account, project) VALUES ('account1', 'project15');
+INSERT INTO hello_world.projects_by_account (account, project) VALUES ('account2', 'project21');
+INSERT INTO hello_world.projects_by_account (account, project) VALUES ('account2', 'project22');
+
+CREATE ROLE role1 WITH superuser=false AND login=true AND password='pw1';
+CREATE ROLE role2 WITH superuser=false AND login=true AND password='pw2';
+
+GRANT SELECT ON 'account1' ROWS IN hello_world.projects_by_account TO role1;
+GRANT SELECT ON 'account2' ROWS IN hello_world.projects_by_account TO role2;
+
+GRANT SELECT ON system_traces.sessions TO role1;
+GRANT SELECT ON system_traces.sessions TO role2;
+GRANT SELECT ON system_traces.events TO role1;
+GRANT SELECT ON system_traces.events TO role2;
+EOF
+cqlsh -u role1 -p pw1 -e "TRACING ON; SELECT * FROM hello_world.projects_by_account WHERE account='account1'; TRACING OFF;" | tail -4 | head -1
+cqlsh -u role1 -p pw1 -e "TRACING ON; SELECT * FROM hello_world.projects_by_account WHERE account='account1'; TRACING OFF;" | tail -4 | head -1
+cqlsh -u role1 -p pw1 -e "TRACING ON; SELECT * FROM hello_world.projects_by_account WHERE account='account1'; TRACING OFF;" | tail -4 | head -1
+cqlsh -u role1 -p pw1 -e "TRACING ON; SELECT * FROM hello_world.projects_by_account WHERE account='account1'; TRACING OFF;" | tail -4 | head -1
+cqlsh -u role1 -p pw1 -e "TRACING ON; SELECT * FROM hello_world.projects_by_account WHERE account='account1'; TRACING OFF;" | tail -4 | head -1
+cqlsh -u role1 -p pw1 -e "TRACING ON; SELECT * FROM hello_world.projects_by_account WHERE account='account1'; TRACING OFF;" | tail -4 | head -1
+cqlsh -u cassandra -p cassandra -e "TRACING ON; SELECT * FROM hello_world.projects_by_account WHERE account='account1'; TRACING OFF;" | tail -4 | head -1
+cqlsh -u cassandra -p cassandra -e "TRACING ON; SELECT * FROM hello_world.projects_by_account WHERE account='account1'; TRACING OFF;" | tail -4 | head -1
+cqlsh -u cassandra -p cassandra -e "TRACING ON; SELECT * FROM hello_world.projects_by_account WHERE account='account1'; TRACING OFF;" | tail -4 | head -1
+cqlsh -u cassandra -p cassandra -e "TRACING ON; SELECT * FROM hello_world.projects_by_account WHERE account='account1'; TRACING OFF;" | tail -4 | head -1
+cqlsh -u cassandra -p cassandra -e "TRACING ON; SELECT * FROM hello_world.projects_by_account WHERE account='account1'; TRACING OFF;" | tail -4 | head -1
+cqlsh -u cassandra -p cassandra -e "TRACING ON; SELECT * FROM hello_world.projects_by_account WHERE account='account1'; TRACING OFF;" | tail -4 | head -1

@@ -1,0 +1,60 @@
+# Steps to repro and then fix: 
+#
+#   Error - field larger than field limit (131072)
+
+# create a load file with a field > 131072
+count=0; 
+val="99|"
+while [ $count -le 132072 ]
+ do 
+  printf "%s" $val 
+  val=a
+  ((count++))
+done > file.csv
+
+# create keyspace/table to load into without fix
+cqlsh -u cassandra -p cassandra << EOF
+drop keyspace if exists test;
+create keyspace test WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};
+create table test.tab1 (col1 int primary key, col2 text);
+COPY test.tab1 FROM 'file.csv' WITH DELIMITER='|' AND HEADER=FALSE;
+EOF
+
+Using 1 child processes
+
+Starting copy of test.tab1 with columns [col1, col2].
+<stdin>:5:Failed to import 1 rows: Error - field larger than field limit (131072),  given up after 1 attempts
+<stdin>:5:Failed to process 1 rows; failed rows written to import_test_tab1.err
+Processed: 1 rows; Rate:       1 rows/s; Avg. rate:       2 rows/s
+1 rows imported from 1 files in 0.578 seconds (0 skipped).
+
+# made change to $DSE_HOME/resources/cassandra/bin/dsecqlsh.py
+# added the following near the top, by the other import's
+
+# import csv
+# import getpass
+# 
+# csv.field_size_limit(sys.maxsize)
+
+# fresh test with python fix
+cqlsh -u cassandra -p cassandra << EOF
+drop keyspace if exists test;
+create keyspace test WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};
+create table test.tab1 (col1 int primary key, col2 text);
+COPY test.tab1 FROM 'file.csv' WITH DELIMITER='|' AND HEADER=FALSE;
+EOF
+
+
+Using 1 child processes
+
+Starting copy of test.tab1 with columns [col1, col2].
+Processed: 1 rows; Rate:       1 rows/s; Avg. rate:       2 rows/s
+1 rows imported from 1 files in 0.539 seconds (0 skipped).
+
+--
+-- Notes
+--
+-- unload
+COPY clipper.pickup_atp(tenantid,skuid,locationid,atp,purchasable,rawatp) \
+  TO 'test.unload' WITH HEADER = FALSE;
+

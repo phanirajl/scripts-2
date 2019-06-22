@@ -1,0 +1,68 @@
+# Test, needs DSE 5.0 or 5.1
+# expects data in /var/lib/cassandra/data
+
+# https://datastax.zendesk.com/agent/tickets/41081
+# https://support.datastax.com/hc/en-us/articles/205368125-Using-INSERT-on-set-data-types-can-create-tombstones
+
+_data=/var/lib/cassandra/data
+
+Refresh() {
+
+# download sstable tools from https://github.com/tolbertam/sstable-tools
+[ ! -f ~/sstable-tools-3.11.0-alpha11.jar ] && wget https://github.com/tolbertam/sstable-tools/releases/download/v3.11.0-alpha11/sstable-tools-3.11.0-alpha11.jar
+
+# tidy up from previous attempts
+cqlsh << EOF
+ DROP KEYSPACE test;
+EOF
+rm -rf ${_data}/test
+
+# step 1
+# setup table and insert a row which should create a tombstone
+# https://www.datastax.com/dev/blog/cassandra-anti-patterns-queues-and-queue-like-datasets
+
+cqlsh << EOF
+ CREATE KEYSPACE test WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};
+ CREATE TABLE test.my_table (
+  id text,
+  description text,
+  data set<text>,
+  PRIMARY KEY ((id), description) );
+EOF
+}
+
+DumpSstable() {
+ echo '------------'
+ echo $2
+ nodetool flush
+ java -jar ~/sstable-tools-3.11.0-alpha11.jar describe ${_data}/test/my_table*/mc-${1}-big-Data.db > results
+ cat results | egrep 'my_table|Rows|Tombstones'
+}
+
+# main
+
+Refresh
+# creates a tombstone
+cqlsh << EOF
+ INSERT INTO test.my_table (id, description, data) VALUES ('id_01', 'the first id', { 'new1', 'new2', 'new3' });
+EOF
+DumpSstable 1 "INSERT INTO test.my_table (id, description, data) VALUES ('id_01', 'the first id', { 'new1', 'new2', 'new3' });"
+
+cqlsh << EOF
+ INSERT INTO test.my_table (id, description, data) VALUES ('id_01', 'the first id', { 'new1', 'new2', 'new3', 'new4' });
+EOF
+DumpSstable 2 "INSERT INTO test.my_table (id, description, data) VALUES ('id_01', 'the first id', { 'new1', 'new2', 'new3', 'new4' });"
+
+Refresh
+# avoids a tombstone using the enhancement
+
+cqlsh << EOF
+ INSERT INTO test.my_table (id, description, data) VALUES ('id_01', 'the first id', { 'new1', 'new2', 'new3' });
+ UPDATE test.my_table SET data = data + { 'new5', 'new6' } WHERE id = 'id_01' and description = 'the first id';
+EOF
+DumpSstable 1 "UPDATE test.my_table SET data = data + { 'new5', 'new6' } WHERE id = 'id_01' and description = 'the first id';"
+
+cqlsh << EOF
+ UPDATE test.my_table SET data = data - { 'new1' } WHERE id = 'id_01' and description = 'the first id';
+EOF
+DumpSstable 2 "UPDATE test.my_table SET data = data - { 'new1' } WHERE id = 'id_01' and description = 'the first id';"

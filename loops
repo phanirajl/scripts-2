@@ -1,0 +1,7 @@
+# Example for loop
+ _num=1
+  for ((i=1; i<=$_num; i++)); do echo $i; done
+
+# Quick for loop
+  for i in {1..10}; do echo "this is $i"; done
+

@@ -1,0 +1,57 @@
+# repro script to demonstrate that a nodetool sstableupgrade 
+#  does not force upgrade all existing sstables (unless you specify -a)
+#
+#  - change DWUSER and DWPASS as required
+#
+
+export USER=automaton
+export GROUP=automaton
+export DWUSER=richard.clark@datastax.com
+export DWPASS=Ash3nd0n
+export CNUM=1
+
+echo "get tarballs if not downloaded already"
+ [ ! -f dse-5.1.7-bin.tar.gz ] && wget --user $DWUSER --password $DWPASS \
+   http://downloads.datastax.com/enterprise/dse-5.1.7-bin.tar.gz
+ [ ! -f dse-6.0.0-bin.tar.gz ] && wget --user $DWUSER --password $DWPASS \
+   http://downloads.datastax.com/enterprise/dse-6.0.0-bin.tar.gz
+ [ ! -d dse-5.1.7 ] && tar xvf dse-5.1.7-bin.tar.gz
+ [ ! -d dse-6.0.0 ] && tar xvf dse-6.0.0-bin.tar.gz
+
+echo "create data dirs"
+ sudo rm -rf /var/lib/cassandra/*
+ sudo rm -rf /var/log/cassandra/*
+ sudo mkdir -p /var/lib/cassandra; sudo chown -R  $USER:$GROUP /var/lib/cassandra
+ sudo mkdir -p /var/log/cassandra; sudo chown -R  $USER:$GROUP /var/log/cassandra
+ sudo mkdir -p /var/lib/dsefs; sudo chown -R  $USER:$GROUP /var/lib/dsefs
+ sudo mkdir -p /var/lib/spark; sudo chown -R  $USER:$GROUP /var/lib/spark
+ sudo mkdir -p /var/log/spark; sudo chown -R  $USER:$GROUP /var/log/spark
+ sudo mkdir -p /var/lib/spark/rdd; sudo chown -R  $USER:$GROUP /var/lib/spark/rdd
+ sudo mkdir -p /var/lib/spark/worker; sudo chown -R  $USER:$GROUP /var/lib/spark/worker
+
+echo "startup 5.1.7 and generate some 'user' sstables"
+ dse-5.1.7/bin/dse cassandra
+ sleep 30
+ dse-5.1.7/resources/cassandra/tools/bin/cassandra-stress write n=100000
+
+echo "drop compact storage, drain and shutdown 5.1.7"
+ dse-5.1.7/bin/cqlsh -e "ALTER TABLE keyspace1.counter1 DROP COMPACT STORAGE;"
+ dse-5.1.7/bin/cqlsh -e "ALTER TABLE keyspace1.standard1 DROP COMPACT STORAGE;"
+ dse-5.1.7/bin/nodetool drain
+ dse-5.1.7/bin/dse cassandra-stop
+
+echo "start up DSE 6.0 and execute sstableupgrade"
+ dse-6.0.0/bin/dse cassandra
+ sleep 30
+
+ echo "creating before_sstableupgrade.${CNUM}"
+ find /var/lib/cassandra/data -name *.db -print > before_sstableupgrade.${CNUM}
+ dse-6.0.0/bin/nodetool upgradesstables
+ echo "creating after_sstableupgrade.${CNUM}"
+ find /var/lib/cassandra/data -name *.db -print > after_sstableupgrade.${CNUM}
+
+echo "sstable version count (excludes backup and snapshot dirs)"
+ sudo find /var/lib/cassandra/data -name *.db -print | grep -v snapshot | grep -v backup | \
+  cut -d\/ -f8 | awk '{print substr($1,1,2)}' | sort | uniq -c
+
+ dse-6.0.0/bin/dse cassandra-stop
